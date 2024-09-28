@@ -3,8 +3,8 @@ name: "vprofile Iac"  # The name of this GitHub Actions workflow.
 on:  # Defines when the workflow should be triggered.
   push:  # Trigger the workflow when code is pushed.
     branches:
-      - main  # Only trigger on push to the 'main' branch.
-      - stage  # Also trigger on push to the 'stage' branch.
+      - stage  # Only trigger on push to the 'main' branch.
+      - main  # Also trigger on push to the 'stage' branch.
     paths:
       - terraform/**  # Only trigger if changes are made in the 'terraform/' directory.
 
