@@ -56,7 +56,7 @@ jobs:  # Defines the jobs to run as part of the workflow.
         id: validate  # Assign an ID to this step.
         run: terraform validate  # The command validates that the Terraform configuration is syntactically valid.
 
-      - name: Terraform Plan  -no-color -input=false -out planfile  # Run a Terraform plan to see what changes would be made.
+      - name: Terraform Plan  -no-color -input=false -out=planfile  # Run a Terraform plan to see what changes would be made.
         id: plan  # Assign an ID to this step (important for referencing the outcome).
         run: terraform plan  # The command runs `terraform plan` to preview the changes.
         continue-on-error: true
