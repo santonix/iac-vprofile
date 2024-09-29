@@ -5,7 +5,7 @@
 ## Tools required
 Terraform version 1.6.3
 
-### Steps
+## Steps
 * terraform init
 * terraform fmt -check
 * terraform validate
