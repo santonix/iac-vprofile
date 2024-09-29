@@ -58,7 +58,7 @@ jobs:  # Defines the jobs to run as part of the workflow.
 
       - name: Terraform Plan  -no-color -input=false -out=planfile  # Run a Terraform plan to see what changes would be made.
         id: plan  # Assign an ID to this step (important for referencing the outcome).
-        run: terraform plan  # The command runs `terraform plan` to preview the changes.
+        run: terraform plan -no-color -input=false -out=planfile # The command runs `terraform plan` to preview the changes.
         continue-on-error: true
 
       - name: Terraform Plan Status Check  # Check if the plan step failed.
