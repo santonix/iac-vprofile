@@ -1,4 +1,4 @@
-name: "vprofile Iac"  # The name of this GitHub Actions workflow.
+name: vprofile Iac  # The name of this GitHub Actions workflow.
 
 on:  # Defines when the workflow should be triggered.
   push:  # Trigger the workflow when code is pushed.
@@ -26,7 +26,7 @@ env:  # Environment variables that are available to all jobs in the workflow.
 
 jobs:  # Defines the jobs to run as part of the workflow.
   terraform:  # The name of the job.
-    name: "Apply Terraform Code Changes"  # Descriptive name for the job.
+    name: Apply Terraform Code Changes # Descriptive name for the job.
     runs-on: ubuntu-latest  # Specifies the runner (environment) to use (Ubuntu).
     
     defaults:  # Default settings for all steps in this job.
@@ -35,31 +35,53 @@ jobs:  # Defines the jobs to run as part of the workflow.
         working-directory: ./terraform  # Set the working directory to the 'terraform/' folder.
 
     steps:  # Individual steps within the job.
-      - name: "Checkout Source Code"  # Name of the step.
+      - name: Checkout Source Code  # Name of the step.
         uses: actions/checkout@v4  # Use the official GitHub action to check out the repository.
 
-      - name: "Setup Terraform with Specified Version on the Runner"  # Name of the step.
+      - name: Setup Terraform with Specified Version on the Runner # Name of the step.
         uses: hashicorp/setup-terraform@v2  # Use the official HashiCorp Terraform setup action.
         with: 
           terraform_version: 1.6.3  # Specify the Terraform version to use (ensure consistency).
 
-      - name: "Terraform Init"  # Initialize the Terraform configuration.
+      - name: Terraform Init # Initialize the Terraform configuration.
         id: init  # Give this step an ID, so it can be referenced later if needed.
         run: terraform init -backend-config="bucket=${{ env.BUCKET_TF_STATE }}"  
         # The command runs `terraform init`, and configures the backend with the S3 bucket for the state file.
 
-      - name: "Terraform Format Check"  # Run terraform fmt to check code formatting.
+      - name: Terraform Format Check # Run terraform fmt to check code formatting.
         id: fmt  # Give this step an ID (could be useful later).
         run: terraform fmt -check  # The `-check` flag ensures it doesn't actually reformat but checks for compliance.
 
-      - name: "Terraform Validate"  # Validate the Terraform code for correctness.
+      - name: Terraform Validate  # Validate the Terraform code for correctness.
         id: validate  # Assign an ID to this step.
         run: terraform validate  # The command validates that the Terraform configuration is syntactically valid.
 
-      - name: "Terraform Plan"  # Run a Terraform plan to see what changes would be made.
+      - name: Terraform Plan  -no-color -input=false -out planfile  # Run a Terraform plan to see what changes would be made.
         id: plan  # Assign an ID to this step (important for referencing the outcome).
         run: terraform plan  # The command runs `terraform plan` to preview the changes.
 
-      - name: "Terraform Plan Status Check"  # Check if the plan step failed.
+      - name: Terraform Plan Status Check  # Check if the plan step failed.
         if: steps.plan.outcome == 'failure'  # Only run this step if the plan step fails.
         run: exit 1  # Exit with code 1 (fail) if the previous step failed.
+      
+      - name: terraform apply 
+        id: apple
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false -parallelism=1 planfile
+
+      - name: configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: get kube config file
+        id: getconfig
+        if: steps.apple.outcome == 'success'
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }}  --name ${{ env.EKS_CLUSTER }}
+
+      - name: install ingress controller
+        if: steps.apple.outcome == 'success' && steps.getconfig.outcome == 'success'
+        run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.3/deploy/static/provider/aws/deploy.yaml
+
